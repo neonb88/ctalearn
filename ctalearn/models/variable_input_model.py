@@ -87,7 +87,7 @@ def combine_telescopes_as_event(telescope_outputs, telescope_aux_inputs,
     event_data = tf.concat(telescope_data, 1)
 
     # Combine telescope auxiliary inputs and triggers into a single vector
-    auxiliary_data = tf.concat([tf.flatten(telescope_aux_inputs),
+    auxiliary_data = tf.concat([tf.layers.flatten(telescope_aux_inputs),
         tf.layers.flatten(telescope_triggers)], 1)
 
     return [event_data, auxiliary_data]
@@ -168,7 +168,7 @@ def variable_input_model(features, labels, params, is_training):
     elif params['network_head'] == 'basic_conv':
         network_head = basic_head_conv
         combine_telescopes = combine_telescopes_as_feature_maps
-    elif params['network_head'] == 'event_convolution':
+    elif params['network_head'] == 'eventconvolution':
         network_head = event_convolution_head
         combine_telescopes = combine_telescopes_as_event
     else:

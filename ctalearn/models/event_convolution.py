@@ -18,15 +18,12 @@ def event_convolution_head(array_features, params=None, is_training=True):
         aux_vector = tf.layers.dense(aux_vector, units=num_units,
                 activation=tf.nn.relu,
                 name="aux_input_processing_{}".format(i+1))
-    # Tile to [BATCH_SIZE, D_AUX]
-    aux_vector = tf.tile(tf.expand_dims(aux_vector, 0),
-            tf.shape(input_layer)[0])
 
     x = input_layer # [BATCH_SIZE, N_TEL, M_CHANNEL]
     # Apply event convolutions
     for i, (num_outputs, num_filters) in enumerate(EVENT_CONVOLUTION_LAYERS):
         # Tile auxiliary vector to [BATCH_SIZE, D_AUX, M_CHANNEL]
-        aux_vectors = tf.tile(tf.expand_dims(aux_vector, -1), tf.shape(x)[-1])
+        aux_vectors = tf.tile(tf.expand_dims(aux_vector, -1), tf.shape(x))
         # Concatenate auxiliary vector to the outputs along the width
         # dimension: [BATCH_SIZE, N_TEL + D_AUX, M_CHANNEL]
         tf.concat([x, aux_vectors], 1)
@@ -35,6 +32,7 @@ def event_convolution_head(array_features, params=None, is_training=True):
         # channels: [BATCH_SIZE, N_OUTPUT, M_FILTERS]
         x = tf.layers.separable_conv1d(x, num_filters, tf.shape(x)[1],
                 depth_multiplier=num_outputs,
+                activation=tf.nn.relu,
                 name="event_convolution_{}".format(i+1))
 
     # Get output logits
