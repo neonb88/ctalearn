@@ -33,7 +33,7 @@ def event_convolution_head(array_features, params=None, is_training=True):
         # Perform separable convolution: first apply N_OUT filters depthwise
         # (acting separately on channels), then M_OUT filters pointwise mixing
         # channels: [BATCH_SIZE, N_OUTPUT, M_FILTERS]
-        x = tf.separable_conv1d(x, num_filters, tf.shape(x)[1],
+        x = tf.layers.separable_conv1d(x, num_filters, tf.shape(x)[1],
                 depth_multiplier=num_outputs,
                 name="event_convolution_{}".format(i+1))
 

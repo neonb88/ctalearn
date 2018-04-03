@@ -6,6 +6,7 @@ from ctalearn.models.alexnet import (alexnet_block,
 from ctalearn.models.mobilenet import mobilenet_block, mobilenet_head
 from ctalearn.models.resnet import (resnet_block, resnet_head)
 from ctalearn.models.densenet import densenet_block
+from ctalearn.models.event_convolution import event_convolution_head
 
 # Drop out all outputs if the telescope was not triggered
 def apply_trigger_dropout(inputs,triggers):
@@ -72,6 +73,24 @@ def combine_telescopes_as_feature_maps(telescope_outputs, telescope_aux_inputs,
     array_features = tf.concat(array_inputs, axis=3)
 
     return array_features
+
+# Given a list of telescope output features and tensors storing the telescope
+# positions and trigger list, return a tensor of array features of the form
+# [BATCH_SIZE, NUM_TELS, TEL_OUTPUT_CHANNELS] and a tensor of the form
+# [BATCH_SIZE, NUM_AUXILIARY_INPUTS_PER_TELESCOPE * NUM_TELESCOPES]
+def combine_telescopes_as_event(telescope_outputs, telescope_aux_inputs, 
+        telescope_triggers, is_training):
+
+    # Combine telescope outputs as an event [BATCH_SIZE, N_TEL, M_FEATURES]
+    telescope_data = [tf.expand_dims(tf.layers.flatten(tel_out), 1) for
+            tel_out in telescope_outputs]
+    event_data = tf.concat(telescope_data, 1)
+
+    # Combine telescope auxiliary inputs and triggers into a single vector
+    auxiliary_data = tf.concat([tf.flatten(telescope_aux_inputs),
+        tf.layers.flatten(telescope_triggers)], 1)
+
+    return [event_data, auxiliary_data]
 
 def variable_input_model(features, labels, params, is_training):
    
@@ -149,6 +168,9 @@ def variable_input_model(features, labels, params, is_training):
     elif params['network_head'] == 'basic_conv':
         network_head = basic_head_conv
         combine_telescopes = combine_telescopes_as_feature_maps
+    elif params['network_head'] == 'event_convolution':
+        network_head = event_convolution_head
+        combine_telescopes = combine_telescopes_as_event
     else:
         raise ValueError("Invalid network head specified: {}.".format(params['network_head']))
     
